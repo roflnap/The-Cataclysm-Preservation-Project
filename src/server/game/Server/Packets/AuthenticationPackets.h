@@ -162,14 +162,6 @@ namespace WorldPackets
             void Read() override;
         };
 
-        class ResumeComms final : public ServerPacket
-        {
-        public:
-            ResumeComms(ConnectionType connection) : ServerPacket(SMSG_RESUME_COMMS, 0, connection) { }
-
-            WorldPacket const* Write() override { return &_worldPacket; }
-        };
-
         enum class ConnectToSerial : uint32
         {
             None            = 0,

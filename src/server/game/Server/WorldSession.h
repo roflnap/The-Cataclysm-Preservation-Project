@@ -81,11 +81,6 @@ namespace WorldPackets
         class RequestResearchHistory;
     }
 
-    namespace Auth
-    {
-        enum class ConnectToSerial : uint32;
-    }
-
     namespace Character
     {
         class CharDelete;
@@ -473,7 +468,6 @@ class TC_GAME_API WorldSession
         void SendAddonsInfo();
         bool IsAddonRegistered(const std::string& prefix) const;
         void SendPacket(WorldPacket const* packet, bool forced = false);
-        void AddInstanceConnection(std::shared_ptr<WorldSocket> sock) { m_Socket[1] = sock; }
 
         void SendNotification(const char *format, ...) ATTR_PRINTF(2, 3);
         void SendNotification(uint32 string_id, ...);
@@ -661,7 +655,6 @@ class TC_GAME_API WorldSession
         void HandleCharCreateOpcode(WorldPacket& recvPacket);
         void HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin& packet);
 
-        void SendConnectToInstance(WorldPackets::Auth::ConnectToSerial serial);
         void HandleContinuePlayerLogin();
         void AbortLogin(WorldPackets::Character::LoginFailureReason reason);
         void HandleLoadScreenOpcode(WorldPackets::Character::LoadingScreenNotify& packet);
@@ -1262,20 +1255,6 @@ class TC_GAME_API WorldSession
         // Query
         void HandleDBQueryBulk(WorldPackets::Query::DBQueryBulk& packet);
 
-        union ConnectToKey
-        {
-            struct
-            {
-                uint64 AccountId : 32;
-                uint64 ConnectionType : 1;
-                uint64 Key : 31;
-            } Fields;
-
-            uint64 Raw;
-        };
-
-        uint64 GetConnectToInstanceKey() const { return _instanceConnectKey.Raw; }
-
     public:
         QueryCallbackProcessor& GetQueryProcessor() { return _queryProcessor; }
         TransactionCallback& AddTransactionCallback(TransactionCallback&& callback);
@@ -1346,7 +1325,7 @@ class TC_GAME_API WorldSession
 
         ObjectGuid::LowType m_GUIDLow;                      // set logined or recently logout player (while m_playerRecentlyLogout set)
         Player* _player;
-        std::shared_ptr<WorldSocket> m_Socket[2];
+        std::shared_ptr<WorldSocket> m_Socket;
         std::string m_Address;                              // Current Remote Address
      // std::string m_LAddress;                             // Last Attempted Remote Adress - we can not set attempted ip for a non-existing session!
 
@@ -1410,8 +1389,6 @@ class TC_GAME_API WorldSession
         std::map<uint32, uint32> _pendingTimeSyncRequests; // key: counter. value: server time when packet with that counter was sent.
         uint32 _timeSyncNextCounter;
         uint32 _timeSyncTimer;
-
-        ConnectToKey _instanceConnectKey;
 
         GameClient* _gameClient;
 

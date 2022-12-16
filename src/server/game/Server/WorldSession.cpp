@@ -152,8 +152,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
         LoginDatabase.PExecute("UPDATE account SET online = 1 WHERE id = %u;", GetAccountId());     // One-time query
     }
 
-    m_Socket[CONNECTION_TYPE_REALM] = sock;
-    _instanceConnectKey.Raw = UI64LIT(0);
+    m_Socket = sock;
 }
 
 /// WorldSession destructor
@@ -164,13 +163,10 @@ WorldSession::~WorldSession()
         LogoutPlayer(true);
 
     /// - If have unclosed socket, close it
-    for (uint8 i = 0; i < 2; ++i)
+    if (m_Socket)
     {
-        if (m_Socket[i])
-        {
-            m_Socket[i]->CloseSocket();
-            m_Socket[i].reset();
-        }
+        m_Socket->CloseSocket();
+        m_Socket.reset();
     }
 
     delete _warden;
@@ -188,8 +184,7 @@ WorldSession::~WorldSession()
 
 bool WorldSession::PlayerDisconnected() const
 {
-    return !(m_Socket[CONNECTION_TYPE_REALM] && m_Socket[CONNECTION_TYPE_REALM]->IsOpen() &&
-        m_Socket[CONNECTION_TYPE_INSTANCE] && m_Socket[CONNECTION_TYPE_INSTANCE]->IsOpen());
+    return !(m_Socket && m_Socket->IsOpen());
 }
 
 std::string const & WorldSession::GetPlayerName() const
@@ -240,24 +235,9 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
         return;
     }
 
-    // Default connection index defined in Opcodes.cpp table
-    ConnectionType conIdx = handler->ConnectionIndex;
-
-    // Override connection index
-    if (packet->GetConnection() != CONNECTION_TYPE_DEFAULT)
+    if (!m_Socket)
     {
-        if (packet->GetConnection() != CONNECTION_TYPE_INSTANCE && IsInstanceOnlyOpcode(packet->GetOpcode()))
-        {
-            TC_LOG_ERROR("network.opcode", "Prevented sending of instance only opcode %u with connection type %u to %s", packet->GetOpcode(), uint32(packet->GetConnection()), GetPlayerInfo().c_str());
-            return;
-        }
-
-        conIdx = packet->GetConnection();
-    }
-
-    if (!m_Socket[conIdx])
-    {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of %s to non existent socket %u to %s", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str(), uint32(conIdx), GetPlayerInfo().c_str());
+        TC_LOG_ERROR("network.opcode", "Prevented sending of %s to non existent socket to %s", GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str(), GetPlayerInfo().c_str());
         return;
     }
 
@@ -308,7 +288,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     sScriptMgr->OnPacketSend(this, *packet);
 
     TC_LOG_TRACE("network.opcode", "S->C: %s %s", GetPlayerInfo().c_str(), GetOpcodeNameForLogging(static_cast<OpcodeServer>(packet->GetOpcode())).c_str());
-    m_Socket[conIdx]->SendPacket(*packet);
+    m_Socket->SendPacket(*packet);
 }
 
 /// Add an incoming packet to the queue
@@ -343,8 +323,8 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
     ///- Before we process anything:
     /// If necessary, kick the player from the character select screen
-    if (IsConnectionIdle() && !HasPermission(rbac::RBAC_PERM_IGNORE_IDLE_CONNECTION))
-        m_Socket[CONNECTION_TYPE_REALM]->CloseSocket();
+    if (m_Socket && IsConnectionIdle() && !HasPermission(rbac::RBAC_PERM_IGNORE_IDLE_CONNECTION))
+        m_Socket->CloseSocket();
 
     ///- Retrieve packets from the receive queue and call the appropriate handlers
     /// not process packets if socket already closed
@@ -357,7 +337,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
     constexpr uint32 MAX_PROCESSED_PACKETS_IN_SAME_WORLDSESSION_UPDATE = 100;
 
-    while (m_Socket[CONNECTION_TYPE_REALM] && _recvQueue.next(packet, updater))
+    while (m_Socket && _recvQueue.next(packet, updater))
     {
         ClientOpcodeHandler const* opHandle = opcodeTable[static_cast<OpcodeClient>(packet->GetOpcode())];
         try
@@ -473,7 +453,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
     _recvQueue.readd(requeuePackets.begin(), requeuePackets.end());
 
-    if (m_Socket[0] && m_Socket[0]->IsOpen() && _warden)
+    if (m_Socket && m_Socket->IsOpen() && _warden)
         _warden->Update();
 
     if (!updater.ProcessUnsafe()) // <=> updater is of type MapSessionFilter
@@ -499,29 +479,21 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
         if (ShouldLogOut(currTime) && m_playerLoading.IsEmpty())
             LogoutPlayer(true);
 
-        if (m_Socket[CONNECTION_TYPE_REALM] && GetPlayer() && _warden)
+        if (m_Socket && GetPlayer() && _warden)
             _warden->Update();
 
         ///- Cleanup socket pointer if need
-        if ((m_Socket[0] && !m_Socket[0]->IsOpen()) || (m_Socket[1] && !m_Socket[1]->IsOpen()))
+        if ((m_Socket && !m_Socket->IsOpen()))
         {
             expireTime -= expireTime > diff ? diff : expireTime;
             if (expireTime < diff || forceExit || !GetPlayer())
             {
-                if (m_Socket[CONNECTION_TYPE_REALM])
-                {
-                    m_Socket[CONNECTION_TYPE_REALM]->CloseSocket();
-                    m_Socket[CONNECTION_TYPE_REALM].reset();
-                }
-                if (m_Socket[CONNECTION_TYPE_INSTANCE])
-                {
-                    m_Socket[CONNECTION_TYPE_INSTANCE]->CloseSocket();
-                    m_Socket[CONNECTION_TYPE_INSTANCE].reset();
-                }
+                m_Socket->CloseSocket();
+                m_Socket.reset();
             }
         }
 
-        if (!m_Socket[CONNECTION_TYPE_REALM])
+        if (!m_Socket)
             return false;                                       //Will remove this session from the world session map
     }
 
@@ -631,7 +603,7 @@ void WorldSession::LogoutPlayer(bool save)
 
         // remove player from the group if he is:
         // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
-        if (_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket[CONNECTION_TYPE_REALM])
+        if (_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket)
             _player->RemoveFromGroup();
 
         //! Send update to group and reset stored max enchanting level
@@ -678,10 +650,10 @@ void WorldSession::LogoutPlayer(bool save)
         CharacterDatabase.Execute(stmt);
     }
 
-    if (m_Socket[CONNECTION_TYPE_INSTANCE])
+    if (m_Socket)
     {
-        m_Socket[CONNECTION_TYPE_INSTANCE]->CloseSocket();
-        m_Socket[CONNECTION_TYPE_INSTANCE].reset();
+        m_Socket->CloseSocket();
+        m_Socket.reset();
     }
 
     m_playerLogout = false;
@@ -693,13 +665,10 @@ void WorldSession::LogoutPlayer(bool save)
 /// Kick a player out of the World
 void WorldSession::KickPlayer()
 {
-    for (uint8 i = 0; i < 2; ++i)
+    if (m_Socket)
     {
-        if (m_Socket[i])
-        {
-            m_Socket[i]->CloseSocket();
-            forceExit = true;
-        }
+        m_Socket->CloseSocket();
+        forceExit = true;
     }
 }
 
@@ -776,25 +745,6 @@ void WorldSession::Handle_Deprecated(WorldPacket& recvPacket)
 {
     TC_LOG_ERROR("network.opcode", "Received deprecated opcode %s from %s"
         , GetOpcodeNameForLogging(static_cast<OpcodeClient>(recvPacket.GetOpcode())).c_str(), GetPlayerInfo().c_str());
-}
-
-void WorldSession::SendConnectToInstance(WorldPackets::Auth::ConnectToSerial serial)
-{
-    boost::system::error_code ignored_error;
-    boost::asio::ip::tcp::endpoint instanceAddress = realm.GetAddressForClient(Trinity::Net::make_address(GetRemoteAddress(), ignored_error));
-    instanceAddress.port(sWorld->getIntConfig(CONFIG_PORT_INSTANCE));
-
-    _instanceConnectKey.Fields.AccountId = GetAccountId();
-    _instanceConnectKey.Fields.ConnectionType = CONNECTION_TYPE_INSTANCE;
-    _instanceConnectKey.Fields.Key = urand(0, 0x7FFFFFFF);
-
-    WorldPackets::Auth::ConnectTo connectTo;
-    connectTo.Key = _instanceConnectKey.Raw;
-    connectTo.Serial = serial;
-    connectTo.Payload.Where = instanceAddress;
-    connectTo.Con = CONNECTION_TYPE_INSTANCE;
-
-    SendPacket(connectTo.Write());
 }
 
 void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)

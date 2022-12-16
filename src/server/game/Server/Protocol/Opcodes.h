@@ -1413,15 +1413,6 @@ inline bool IsInstanceOnlyOpcode(uint32 opcode)
     }
 }
 
-enum ConnectionType
-{
-    CONNECTION_TYPE_REALM       = 0,
-    CONNECTION_TYPE_INSTANCE    = 1,
-    MAX_CONNECTION_TYPES,
-
-    CONNECTION_TYPE_DEFAULT     = -1
-};
-
 enum OpcodeMisc : uint16
 {
     MAX_OPCODE                                        = 0x7FFF,
@@ -1476,10 +1467,8 @@ public:
 class ServerOpcodeHandler : public OpcodeHandler
 {
 public:
-    ServerOpcodeHandler(char const* name, SessionStatus status, ConnectionType conIdx)
-        : OpcodeHandler(name, status), ConnectionIndex(conIdx) { }
-
-    ConnectionType ConnectionIndex;
+    ServerOpcodeHandler(char const* name, SessionStatus status)
+        : OpcodeHandler(name, status) { }
 };
 
 class OpcodeTable
@@ -1507,7 +1496,7 @@ public:
 private:
     template<typename Handler, Handler HandlerFunction>
     void ValidateAndSetClientOpcode(OpcodeClient opcode, char const* name, SessionStatus status, PacketProcessing processing);
-    void ValidateAndSetServerOpcode(OpcodeServer opcode, char const* name, SessionStatus status, ConnectionType conIdx);
+    void ValidateAndSetServerOpcode(OpcodeServer opcode, char const* name, SessionStatus status);
 
     ClientOpcodeHandler* _internalTableClient[NUM_OPCODE_HANDLERS];
     ServerOpcodeHandler* _internalTableServer[NUM_OPCODE_HANDLERS];

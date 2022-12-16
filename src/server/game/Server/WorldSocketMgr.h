@@ -54,7 +54,6 @@ protected:
     NetworkThread<WorldSocket>* CreateThreads() const override;
 
 private:
-    AsyncAcceptor* _instanceAcceptor;
     int32 _socketSystemSendBufferSize;
     int32 _socketApplicationSendBufferSize;
     bool _tcpNoDelay;

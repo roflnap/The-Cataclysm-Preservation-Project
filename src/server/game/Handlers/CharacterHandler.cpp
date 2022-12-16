@@ -752,7 +752,7 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin&
         return;
     }
 
-    SendConnectToInstance(WorldPackets::Auth::ConnectToSerial::WorldAttempt1);
+    HandleContinuePlayerLogin();
 }
 
 void WorldSession::HandleContinuePlayerLogin()
@@ -769,8 +769,6 @@ void WorldSession::HandleContinuePlayerLogin()
         m_playerLoading.Clear();
         return;
     }
-
-    SendPacket(WorldPackets::Auth::ResumeComms(CONNECTION_TYPE_INSTANCE).Write());
 
     AddQueryHolderCallback(CharacterDatabase.DelayQueryHolder(holder)).AfterComplete([this](SQLQueryHolderBase const& holder)
     {

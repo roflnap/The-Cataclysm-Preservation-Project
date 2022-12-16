@@ -97,8 +97,6 @@ public:
     void SendPacket(WorldPacket const& packet);
     void SetSendBufferSize(std::size_t sendBufferSize) { _sendBufferSize = sendBufferSize; }
 
-    ConnectionType GetConnectionType() const { return _type; }
-
     void SendAuthResponseError(uint8 code);
     void SetWorldSession(WorldSession* session);
 
@@ -127,13 +125,9 @@ private:
     void HandleSendAuthSession();
     void HandleAuthSession(std::shared_ptr<WorldPackets::Auth::AuthSession> authSession);
     void HandleAuthSessionCallback(std::shared_ptr<WorldPackets::Auth::AuthSession> authSession, PreparedQueryResult result);
-    void HandleAuthContinuedSession(std::shared_ptr<WorldPackets::Auth::AuthContinuedSession> authSession);
-    void HandleAuthContinuedSessionCallback(std::shared_ptr<WorldPackets::Auth::AuthContinuedSession> authSession, PreparedQueryResult result);
     void LoadSessionPermissionsCallback(PreparedQueryResult result);
     void HandleConnectToFailed(WorldPackets::Auth::ConnectToFailed& connectToFailed);
     bool HandlePing(WorldPackets::Auth::Ping& ping);
-
-    ConnectionType _type;
 
     uint32 _authSeed;
     WorldPacketCrypt _authCrypt;

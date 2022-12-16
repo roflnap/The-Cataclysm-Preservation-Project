@@ -310,11 +310,6 @@ void World::AddSession(WorldSession* s)
     addSessQueue.add(s);
 }
 
-void World::AddInstanceSocket(std::weak_ptr<WorldSocket> sock, uint64 connectToKey)
-{
-    _linkSocketQueue.add(std::make_pair(sock, connectToKey));
-}
-
 void World::AddSession_(WorldSession* s)
 {
     ASSERT(s);
@@ -378,30 +373,6 @@ void World::AddSession_(WorldSession* s)
         popu /= pLimit;
         popu *= 2;
         TC_LOG_INFO("misc", "Server Population (%f).", popu);
-    }
-}
-
-void World::ProcessLinkInstanceSocket(std::pair<std::weak_ptr<WorldSocket>, uint64> linkInfo)
-{
-    if (std::shared_ptr<WorldSocket> sock = linkInfo.first.lock())
-    {
-        if (!sock->IsOpen())
-            return;
-
-        WorldSession::ConnectToKey key;
-        key.Raw = linkInfo.second;
-
-        WorldSession* session = FindSession(uint32(key.Fields.AccountId));
-        if (!session || session->GetConnectToInstanceKey() != linkInfo.second)
-        {
-            sock->SendAuthResponseError(AUTH_SESSION_EXPIRED);
-            sock->DelayedCloseSocket();
-            return;
-        }
-
-        sock->SetWorldSession(session);
-        session->AddInstanceConnection(sock);
-        session->HandleContinuePlayerLogin();
     }
 }
 
@@ -3106,10 +3077,6 @@ void World::SendServerMessage(ServerMessageType type, const char *text, Player* 
 
 void World::UpdateSessions(uint32 diff)
 {
-    std::pair<std::weak_ptr<WorldSocket>, uint64> linkInfo;
-    while (_linkSocketQueue.next(linkInfo))
-        ProcessLinkInstanceSocket(std::move(linkInfo));
-
     ///- Add new sessions
     WorldSession* sess = nullptr;
     while (addSessQueue.next(sess))

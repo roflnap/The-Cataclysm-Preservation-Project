@@ -229,6 +229,7 @@ namespace WorldPackets
         class Complaint;
         class SupportTicketSubmitSuggestion;
         class SupportTicketSubmitBug;
+        class SupportTicketSubmitComplaint;
     }
 
     namespace Totem
@@ -1162,6 +1163,7 @@ class TC_GAME_API WorldSession
         void HandleComplaintOpcode(WorldPackets::Ticket::Complaint& packet);
         void HandleSupportTicketSubmitSuggestionOpcode(WorldPackets::Ticket::SupportTicketSubmitSuggestion& packet);
         void HandleSupportTicketSubmitBugOpcode(WorldPackets::Ticket::SupportTicketSubmitBug& packet);
+        void HandleSupportTicketSubmitComplaintOpcode(WorldPackets::Ticket::SupportTicketSubmitComplaint& packet);
         void HandleRequestPetInfoOpcode(WorldPacket& recvData);
 
         // Socket gem

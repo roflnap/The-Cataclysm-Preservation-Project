@@ -33,7 +33,9 @@ class WorldPacket : public ByteBuffer
         {
         }
 
-        WorldPacket(uint16 opcode, size_t res = 200) : ByteBuffer(res), m_opcode(opcode), _compressionStream(nullptr)
+        WorldPacket(uint16 opcode, size_t res = 200) : ByteBuffer(res), m_opcode(opcode), _compressionStream(nullptr) { }
+
+        WorldPacket(WorldPacket&& packet) noexcept : ByteBuffer(std::move(packet)), m_opcode(packet.m_opcode), _compressionStream(nullptr)
         {
         }
 
@@ -60,7 +62,7 @@ class WorldPacket : public ByteBuffer
             return *this;
         }
 
-        WorldPacket& operator=(WorldPacket&& right)
+        WorldPacket& operator=(WorldPacket&& right) noexcept
         {
             if (this != &right)
             {

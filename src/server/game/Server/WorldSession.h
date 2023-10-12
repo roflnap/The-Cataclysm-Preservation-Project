@@ -216,6 +216,11 @@ namespace WorldPackets
         class DBQueryBulk;
     }
 
+    namespace Reforge
+    {
+        class ReforgeItem;
+    }
+
     namespace Spells
     {
         class CastSpell;
@@ -1230,7 +1235,7 @@ class TC_GAME_API WorldSession
         void HandleTransmogrifyItems(WorldPackets::Item::TransmogrifyItems& packet);
 
         // Reforge
-        void HandleReforgeItemOpcode(WorldPacket& recvData);
+        void HandleReforgeItemOpcode(WorldPackets::Reforge::ReforgeItem& packet);
         void SendReforgeResult(bool success);
 
         // Miscellaneous

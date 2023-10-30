@@ -315,7 +315,6 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_GROUP_RAID_CONVERT,                               STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGroupRaidConvertOpcode    );
     DEFINE_HANDLER(CMSG_GROUP_REQUEST_JOIN_UPDATES,                       STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGroupRequestJoinUpdates   );
     DEFINE_HANDLER(CMSG_GROUP_SET_LEADER,                                 STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGroupSetLeaderOpcode      );
-    DEFINE_HANDLER(CMSG_GROUP_SET_ROLES,                                  STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleGroupSetRolesOpcode       );
     DEFINE_HANDLER(CMSG_GROUP_SWAP_SUB_GROUP,                             STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGroupSwapSubGroupOpcode   );
     DEFINE_HANDLER(CMSG_GROUP_UNINVITE_GUID,                              STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGroupUninviteGuidOpcode   );
     DEFINE_HANDLER(CMSG_GUILD_ACCEPT,                                     STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleGuildAcceptOpcode         );
@@ -570,6 +569,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_SET_PREFERED_CEMETERY,                            STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_HANDLER(CMSG_SET_PRIMARY_TALENT_TREE,                          STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_HANDLER(CMSG_SET_RELATIVE_POSITION,                            STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
+    DEFINE_HANDLER(CMSG_SET_ROLE,                                         STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleSetRoleOpcode             );
     DEFINE_HANDLER(CMSG_SET_SAVED_INSTANCE_EXTEND,                        STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleSetSavedInstanceExtend    );
     DEFINE_HANDLER(CMSG_SET_SELECTION,                                    STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleSetSelectionOpcode        );
     DEFINE_HANDLER(CMSG_SET_TAXI_BENCHMARK_MODE,                          STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleSetTaxiBenchmarkOpcode    );
@@ -869,7 +869,6 @@ void OpcodeTable::Initialize()
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PARTY_INVITE,                                     STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PARTY_UPDATE,                                     STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_GROUP_SET_LEADER,                                 STATUS_NEVER);
-    DEFINE_SERVER_OPCODE_HANDLER(SMSG_GROUP_SET_ROLE,                                   STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_GROUP_UNINVITE,                                   STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_GUILD_ACHIEVEMENT_DATA,                           STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_GUILD_ACHIEVEMENT_DELETED,                        STATUS_NEVER);
@@ -1171,6 +1170,7 @@ void OpcodeTable::Initialize()
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_RESURRECT_FAILED,                                 STATUS_UNHANDLED);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_RESURRECT_REQUEST,                                STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_RESYNC_RUNES,                                     STATUS_NEVER);
+    DEFINE_SERVER_OPCODE_HANDLER(SMSG_ROLE_CHANGED_INFORM,                              STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_ROLE_POLL_BEGIN,                                  STATUS_NEVER);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_RWHOIS,                                           STATUS_UNHANDLED);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_SELL_ITEM,                                        STATUS_NEVER);

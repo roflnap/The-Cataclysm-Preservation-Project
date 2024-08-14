@@ -39,10 +39,6 @@ class WorldPacket : public ByteBuffer
         {
         }
 
-        WorldPacket(WorldPacket&& packet) : ByteBuffer(std::move(packet)), m_opcode(packet.m_opcode), _compressionStream(nullptr)
-        {
-        }
-
         WorldPacket(WorldPacket&& packet, std::chrono::steady_clock::time_point receivedTime) : ByteBuffer(std::move(packet)), m_opcode(packet.m_opcode), _compressionStream(nullptr), m_receivedTime(receivedTime)
         {
         }
